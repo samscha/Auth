@@ -8,7 +8,6 @@ const bcrypt = require('bcrypt');
 const User = require('./user');
 
 const STATUS_USER_ERROR = 422;
-const BCRYPT_COST = 11;
 
 const server = express();
 // to enable parsing of json bodies for post requests
@@ -67,14 +66,19 @@ server.post('/users', (req, res) => {
     return;
   }
 
-  bcrypt.hash(password, BCRYPT_COST, (err, hash) => {
-    err
-      ? sendUserError(err, res)
-      : User({ username, passwordHash: hash })
-          .save()
-          .then(savedUser => res.json(savedUser))
-          .catch(err => sendUserError(err, res));
-  });
+  User({ username, passwordHash: password })
+    .save()
+    .then(savedUser => res.json(savedUser))
+    .catch(err => sendUserError(err, res));
+
+  // bcrypt.hash(password, BCRYPT_COST, (err, hash) => {
+  //   err
+  //     ? sendUserError(err, res)
+  //     : User({ username, passwordHash: hash })
+  //         .save()
+  //         .then(savedUser => res.json(savedUser))
+  //         .catch(err => sendUserError(err, res));
+  // });
 });
 
 server.post('/log-in', (req, res) => {
@@ -141,4 +145,4 @@ server.get('/restricted/a', (req, res) => {
   res.json({ message: `a restricted accessed by ${req.user.username}` });
 });
 
-module.exports = { server };
+module.exports = { server, sendUserError };
