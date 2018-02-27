@@ -2,9 +2,9 @@
 
 const bodyParser = require('body-parser');
 const express = require('express');
+const mongoose = require('mongoose');
 const session = require('express-session');
-const bcrypt = require('bcrypt');
-
+const MongoStore = require('connect-mongo')(session);
 const User = require('./user');
 
 const STATUS_USER_ERROR = 422;
@@ -16,6 +16,11 @@ server.use(
     secret: 'e5SPiqsEtjexkTj3Xqovsjzq8ovjfgVDFMfUzSmJO21dtXs4re',
     saveUninitialized: true,
     resave: true,
+    store: new MongoStore({
+      mongooseConnection: mongoose.connection,
+      autoRemove: 'interval',
+      autoRemoveInterval: 10,
+    }),
   }),
 );
 
@@ -39,12 +44,12 @@ const sendUserError = (err, res) => {
 };
 
 const checkIfLoggedIn = (req, res, next) => {
-  if (!session.username) {
+  if (!req.session.username) {
     sendUserError('Not logged in.', res);
     return;
   }
 
-  User.findById(session.username).then(foundUser => {
+  User.findById(req.session.username).then(foundUser => {
     if (foundUser === null) {
       sendUserError('Logged in user not found in db.', res);
       return;
@@ -77,6 +82,11 @@ server.post('/log-in', (req, res) => {
     return;
   }
 
+  if (req.session.username) {
+    sendUserError('There is a user already logged in.', res);
+    return;
+  }
+
   User.findOne({ username }).then(foundUser => {
     if (!foundUser) {
       sendUserError('User not found in db.', res);
@@ -90,7 +100,7 @@ server.post('/log-in', (req, res) => {
       }
 
       if (isValid) {
-        session.username = foundUser._id;
+        req.session.username = foundUser._id;
         res.json({ success: true });
         return;
       }
@@ -101,12 +111,12 @@ server.post('/log-in', (req, res) => {
 });
 
 server.get('/log-out', (req, res) => {
-  if (!session.username) {
+  if (!req.session.username) {
     sendUserError('Not logged in.', res);
     return;
   }
 
-  session.username = undefined;
+  req.session.username = undefined;
   res.json({ message: 'Successfully logged out.' });
 });
 
