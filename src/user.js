@@ -8,8 +8,6 @@ const BCRYPT_COST = 11;
 
 const { sendUserError } = require('./server');
 
-// Clear out mongoose's model cache to allow --watch to work for tests:
-// https://github.com/Automattic/mongoose/issues/1251
 mongoose.models = {};
 mongoose.modelSchemas = {};
 
@@ -45,5 +43,11 @@ UserSchema.pre('save', function(next) {
     next();
   });
 });
+
+UserSchema.methods.checkPassword = function(password, cb) {
+  bcrypt.compare(password, this.passwordHash, (isValid, err) => {
+    err ? cb(err) : cb(isValid);
+  });
+};
 
 module.exports = mongoose.model('User', UserSchema);

@@ -10,7 +10,6 @@ const User = require('./user');
 const STATUS_USER_ERROR = 422;
 
 const server = express();
-// to enable parsing of json bodies for post requests
 server.use(bodyParser.json());
 server.use(
   session({
@@ -30,8 +29,6 @@ server.use((req, res, next) => {
   next();
 });
 
-/* Sends the given err, a string or an object, to the client. Sets the status
- * code appropriately. */
 const sendUserError = (err, res) => {
   res.status(STATUS_USER_ERROR);
   if (err && err.message) {
@@ -70,15 +67,6 @@ server.post('/users', (req, res) => {
     .save()
     .then(savedUser => res.json(savedUser))
     .catch(err => sendUserError(err, res));
-
-  // bcrypt.hash(password, BCRYPT_COST, (err, hash) => {
-  //   err
-  //     ? sendUserError(err, res)
-  //     : User({ username, passwordHash: hash })
-  //         .save()
-  //         .then(savedUser => res.json(savedUser))
-  //         .catch(err => sendUserError(err, res));
-  // });
 });
 
 server.post('/log-in', (req, res) => {
@@ -89,25 +77,20 @@ server.post('/log-in', (req, res) => {
     return;
   }
 
-  User.find({ username }).then(foundUser => {
-    if (foundUser.length == 0) {
+  User.findOne({ username }).then(foundUser => {
+    if (!foundUser) {
       sendUserError('User not found in db.', res);
       return;
     }
 
-    if (foundUser.length > 1) {
-      sendUserError('More than one user found in db.', res);
-      return;
-    }
-
-    bcrypt.compare(password, foundUser[0].passwordHash, (err, isValid) => {
+    foundUser.checkPassword(password, (isValid, err) => {
       if (err) {
         sendUserError(err, res);
         return;
       }
 
       if (isValid) {
-        session.username = foundUser[0]._id;
+        session.username = foundUser._id;
         res.json({ success: true });
         return;
       }
@@ -128,7 +111,6 @@ server.get('/log-out', (req, res) => {
 });
 
 server.get('/me', checkIfLoggedIn, (req, res) => {
-  // Do NOT modify this route handler in any way.
   res.json(req.user);
 });
 
