@@ -113,6 +113,16 @@ server.post('/log-in', (req, res) => {
   });
 });
 
+server.get('/log-out', (req, res) => {
+  if (!session.username) {
+    sendUserError('Not logged in.', res);
+    return;
+  }
+
+  session.username = undefined;
+  res.json({ message: 'Successfully logged out.' });
+});
+
 server.get('/me', checkIfLoggedIn, (req, res) => {
   // Do NOT modify this route handler in any way.
   res.json(req.user);
