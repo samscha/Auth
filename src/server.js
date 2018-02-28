@@ -5,7 +5,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
+const cors = require('cors');
 const User = require('./user');
+
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  credentials: true,
+};
 
 const STATUS_USER_ERROR = 422;
 
@@ -23,6 +29,7 @@ server.use(
     }),
   }),
 );
+server.use(cors(corsOptions));
 
 server.use((req, res, next) => {
   if (req.originalUrl.includes('/restricted')) {
@@ -74,7 +81,43 @@ server.post('/users', (req, res) => {
     .catch(err => sendUserError(err, res));
 });
 
-server.post('/log-in', (req, res) => {
+// server.post('/log-in', (req, res) => {
+//   const { username, password } = req.body;
+
+//   if (!username || !password) {
+//     sendUserError('Please provide a username and/or password.', res);
+//     return;
+//   }
+
+//   if (req.session.username) {
+//     sendUserError('There is a user already logged in.', res);
+//     return;
+//   }
+
+//   User.findOne({ username }).then(foundUser => {
+//     if (!foundUser) {
+//       sendUserError('User not found in db.', res);
+//       return;
+//     }
+
+//     foundUser.checkPassword(password, (isValid, err) => {
+//       if (err) {
+//         sendUserError(err, res);
+//         return;
+//       }
+
+//       if (isValid) {
+//         req.session.username = foundUser._id;
+//         res.json({ success: true });
+//         return;
+//       }
+
+//       sendUserError('Invalid password.', res);
+//     });
+//   });
+// });
+
+server.post('/login', (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
