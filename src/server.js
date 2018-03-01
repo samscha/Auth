@@ -125,10 +125,11 @@ server.post('/login', (req, res) => {
     return;
   }
 
-  if (req.session.username) {
-    sendUserError('There is a user already logged in.', res);
-    return;
-  }
+  // if (req.session.username) {
+
+  //   sendUserError('There is a user already logged in.', res);
+  //   return;
+  // }
 
   User.findOne({ username }).then(foundUser => {
     if (!foundUser) {
@@ -153,7 +154,7 @@ server.post('/login', (req, res) => {
   });
 });
 
-server.get('/log-out', (req, res) => {
+server.post('/logout', (req, res) => {
   if (!req.session.username) {
     sendUserError('Not logged in.', res);
     return;
@@ -176,8 +177,17 @@ server.get('/restricted/something', (req, res) => {
 server.get('/restricted/other', (req, res) => {
   res.json({ message: `other restricted accessed by ${req.user.username}` });
 });
+
 server.get('/restricted/a', (req, res) => {
   res.json({ message: `a restricted accessed by ${req.user.username}` });
+});
+
+server.get('/restricted/users', (req, res) => {
+  User.find()
+    .then(users => {
+      res.json(users);
+    })
+    .catch(err => sendUserError('Unable to retrieve users', res));
 });
 
 module.exports = { server, sendUserError };
